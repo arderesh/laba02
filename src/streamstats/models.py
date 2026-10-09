@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-LEVELS_ALLOWED ={
+ALLOWED_LEVELS ={
     "DEBUG",
     "INFO",
     "WARNING",
@@ -12,6 +12,6 @@ LEVELS_ALLOWED ={
 @dataclass(frozen=True)
 class Event:
     timestamp: datetime
-    level:str
+    level: str
     source: str
     message: str
