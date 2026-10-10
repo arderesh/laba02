@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-ALLOWED_LEVELS ={
+ALLOWED_LEVELS = {
     "DEBUG",
     "INFO",
     "WARNING",
