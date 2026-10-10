@@ -1,14 +1,14 @@
 class StreamStatsError(Exception):
-    "базовая ошибка аппки"
+    """базовая ошибка аппки"""
 
 class UnsupportedFileFormatError(StreamStatsError):
-    "неподдерживаемый формат файла"
+    """неподдерживаемый формат файла"""
 
 class InvalidEventError(StreamStatsError):
-    "неверное событие"
+    """неверное событие"""
 
 class InvalidTimestmpError(StreamStatsError):
-    "неверная временная метка"
+    """неверная временная метка"""
 
 class CLIConfError(StreamStatsError):
-    "ошибка конфигурации CLI"
+    """ошибка конфигурации CLI"""
