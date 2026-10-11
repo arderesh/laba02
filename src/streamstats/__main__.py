@@ -4,7 +4,9 @@ from streamstats.analysis import Statistics
 from streamstats.errors import StreamStatsError
 from streamstats.parsers import parse_csv, parse_jsonl
 from streamstats.report import make_report, save_report
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 def make_arg_parser():
     parser = argparse.ArgumentParser(description="Анализ файлов")
@@ -30,9 +32,12 @@ def run_analyze(args):
         parse_func = parse_jsonl
 
     for input_path in args.inputs:
-        events = parse_func(input_path)
+        events = parse_func(input_path, skip_invalid=args.skip_invalid)
 
         for event in events:
+            if event is None:
+                statistics.skip_invalid += 1
+                continue
             statistics.add_event(event)
 
     report = make_report(statistics)

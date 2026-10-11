@@ -1,8 +1,8 @@
 import csv
 import json
 from datetime import datetime
-
-from streamstats.errors import InvalidEventError, InvalidTimestmpError
+import logging
+from streamstats.errors import InvalidEventError, InvalidTimestmpError, StreamStatsError
 from streamstats.models import ALLOWED_LEVELS, Event
 
 
@@ -25,9 +25,9 @@ def make_event(data, filename, line_number):
 
     try:
         timestamp = datetime.fromisoformat(timestamp_val)
-    except ValueError as error:
+    except ValueError:
         raise InvalidTimestmpError(f"В файле {filename} на строке {line_number} "
-                                   f"неверная дата {timestamp_val}!")
+                                   f"{timestamp_val}!")
     if not isinstance(level_val, str) or level_val not in ALLOWED_LEVELS:
         raise InvalidEventError(f"В файле {filename} на строке {line_number} "
                                 f"некорректный уровень {level_val}!")
@@ -44,25 +44,49 @@ def make_event(data, filename, line_number):
                  message=message_val)
 
 
-def parse_csv(path):
+def parse_csv(path, skip_invalid=False):
     with open(path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
-            yield make_event(row, path, reader.line_num)
+            try:
+                event = make_event(row, path, reader.line_num)
+            except StreamStatsError as error:
+                if not skip_invalid:
+                    raise
+
+                logging.warning(error)
+                yield None
+                continue
+
+            yield event
 
 
-def parse_jsonl(path):
+def parse_jsonl(path,skip_invalid=False):
     with open(path, "r", encoding="utf-8") as f:
         for line_number, line in enumerate(f, start=1):
             try:
                 data = json.loads(line)
+
+                if not isinstance(data, dict):
+                    raise InvalidEventError(f"В файле {path} на строке {line_number} "
+                                            f"JSON должен содержать объект!")
+                event = make_event(data, path, line_number)
             except json.JSONDecodeError:
-                raise InvalidEventError(f"В файле {path} на строке {line_number} "
-                                        f"некорректный JSON")
+                error = InvalidEventError(f"В файле {path} на строке {line_number} "
+                                          f"некорректный JSON!")
+                if not skip_invalid:
+                    raise error
+                logging.warning(error)
+                yield None
+                continue
 
-            if not isinstance(data, dict):
-                raise InvalidEventError(f"В файле {path} на строке {line_number} "
-                                        f"JSON должен содержать объект!")
+            except StreamStatsError as e:
+                if not skip_invalid:
+                    raise
 
-            yield make_event(data, path, line_number)
+                logging.warning(e)
+                yield None
+                continue
+
+            yield event
