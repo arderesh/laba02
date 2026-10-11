@@ -55,6 +55,9 @@ def main():
     except StreamStatsError as e:
         print(e, file=sys.stderr)
         return 2
+    except OSError as error:
+        print(f'Ошибка работы с файлом: {error}', file=sys.stderr)
+        return 2
     return 0
 
 

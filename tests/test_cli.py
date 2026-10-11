@@ -35,7 +35,8 @@ def test_skip_inval(tmp_path):
 
     result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
                              str(input_f), "--format", "jsonl", "--output",
-                             str(output_f), "--skip-invalid"], capture_output=True, text=True)
+                             str(output_f), "--skip-invalid"], capture_output=True,
+                             text=True)
 
     assert result.returncode == 0
     report = json.loads(output_f.read_text(encoding="utf-8"))
