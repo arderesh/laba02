@@ -17,3 +17,6 @@ def make_report(statistics: Statistics):
             "skip_invalid": statistics.skip_invalid}
 
 
+def save_report(report, output_path):
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
