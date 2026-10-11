@@ -14,7 +14,8 @@ def make_arg_parser():
 
     analyze_parser = subparsers.add_parser('analyze', help="Анализ файлов")
     analyze_parser.add_argument("inputs", nargs="+", help="Анализ input файлов")
-    analyze_parser.add_argument("--format", choices=['csv', 'jsonl'], required=True, help="Формат input файлов")
+    analyze_parser.add_argument("--format", choices=['csv', 'jsonl'],
+                                required=True, help="Формат input файлов")
     analyze_parser.add_argument("--output", required=True, help="Путь к файлу отчета")
     analyze_parser.add_argument("--skip-invalid", action='store_true')
 
