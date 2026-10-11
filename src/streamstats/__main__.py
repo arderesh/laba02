@@ -28,3 +28,24 @@ def make_arg_parser():
     analize_parser.add_argument("--skip-invalid", action='store_true')
 
     return parser
+
+
+def run_analize(args):
+    statistics = Statistics()
+
+    if args.format == 'csv':
+        parse_func = parse_csv
+
+    else:
+        parse_func = parse_jsonl
+
+    for input_path in args.inputs:
+        events = parse_func(input_path)
+
+        for event in events:
+            statistics.add_event(event)
+
+    report = make_report(statistics)
+    save_report(report, args.output)
+
+
