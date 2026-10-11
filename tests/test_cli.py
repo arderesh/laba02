@@ -85,3 +85,16 @@ def test_2_input_f(tmp_path):
     assert report["by_source"] == {"app": 1, "server": 1}
     assert report["first_timestamp"] == "2026-10-10T10:00:00"
     assert report["last_timestamp"] == "2026-10-10T12:00:00"
+
+
+def test_miss_input_file(tmp_path):
+    output_f = tmp_path / "report.json"
+    miss_f = tmp_path / "missing.jsonl"
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(miss_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 2
+    assert "missing.jsonl" in result.stderr
+    assert not output_f.exists()
