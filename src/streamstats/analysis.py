@@ -36,7 +36,7 @@ class Statistics:
                       key=lambda item: (-item[1], item[0]))[:lim]
 
 
-def analiz_events(events):
+def analyze_events(events):
     statistics = Statistics()
 
     for event in events:
