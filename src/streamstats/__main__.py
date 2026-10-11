@@ -18,13 +18,13 @@ def get_parser(format):
 
 
 def make_arg_parser():
-    parser = argparse.ArgumentParser()
-    subarsers = parser.add_subparsers()
+    parser = argparse.ArgumentParser(description="Анализ файлов")
+    subarsers = parser.add_subparsers(dest='command', required=True)
 
-    analize_parser = subarsers.add_parser('analize')
-    analize_parser.add_argument("inputs", nargs="+")
-    analize_parser.add_argument("--format", choices=['csv', 'jsonl'], reauired=True)
-    analize_parser.add_argument("--output", required=True)
+    analize_parser = subarsers.add_parser('analize', help="Анализ файлов")
+    analize_parser.add_argument("inputs", nargs="+", help="Анализ input файлов")
+    analize_parser.add_argument("--format", choices=['csv', 'jsonl'], required=True, help="Формат input файлов")
+    analize_parser.add_argument("--output", required=True, help="Путь к файлу отчета")
     analize_parser.add_argument("--skip-invalid", action='store_true')
 
     return parser
@@ -49,3 +49,18 @@ def run_analize(args):
     save_report(report, args.output)
 
 
+def main():
+    parser = make_arg_parser()
+    args = parser.parse_args()
+
+    try:
+        if args.command == 'analize':
+            run_analize(args)
+    except StreamStatsError as e:
+        print(e, file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
