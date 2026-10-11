@@ -54,7 +54,8 @@ def test_top_errors():
     stats.err_sources["server"] = 5
     stats.err_sources["database"] = 3
 
-    assert stats.top_errors() == [("server", 5), ("database", 3), ("a", 2), ("b", 2), ("c", 2)]
+    assert stats.top_errors() == [("server", 5), ("database", 3),
+                                  ("a", 2), ("b", 2), ("c", 2)]
 
 
 def test_analyze_events():

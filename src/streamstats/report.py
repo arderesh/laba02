@@ -7,11 +7,12 @@ def make_report(statistics: Statistics):
     return {"total_events": statistics.total_evs,
             "by_level": dict(statistics.level),
             "by_source": dict(statistics.source),
-            "top_error_sources": [{"source": source, "count": count} for source, count in statistics.top_errors()],
-            "first_timestamp": (statistics.frst_timestmp.isoformat() if statistics.frst_timestmp is not None
-                                else None),
-            "last_timestamp": (statistics.last_timestmp.isoformat() if statistics.last_timestmp is not None
-                               else None),
+            "top_error_sources": [{"source": source, "count": count}
+                                  for source, count in statistics.top_errors()],
+            "first_timestamp": (statistics.frst_timestmp.isoformat()
+                                if statistics.frst_timestmp is not None else None),
+            "last_timestamp": (statistics.last_timestmp.isoformat()
+                               if statistics.last_timestmp is not None else None),
             "skipped_invalid": statistics.skip_invalid}
 
 

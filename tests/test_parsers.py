@@ -25,7 +25,8 @@ def test_jsonl(tmp_path):
     input_f.write_text(json.dumps({"timestamp": "2026-10-10T10:00:00",
                                    "level": "ERROR",
                                    "source": "server",
-                                   "message": "Ошибка"}, ensure_ascii=False) + "\n", encoding="utf-8")
+                                   "message": "Ошибка"},
+                                  ensure_ascii=False) + "\n", encoding="utf-8")
     events = list(parse_jsonl(str(input_f)))
 
     assert len(events) == 1
@@ -62,7 +63,7 @@ def test_invalid_time(tmp_path):
     with pytest.raises(InvalidTimestmpError) as error:
         list(parse_jsonl(str(input_f)))
 
-    assert "строка 1" in str(error.value)
+    assert "на строке 1" in str(error.value)
     assert "неверная дата" in str(error.value)
 
 
@@ -73,13 +74,14 @@ def test_invalid_json(tmp_path):
     with pytest.raises(InvalidEventError) as error:
         list(parse_jsonl(str(input_f)))
 
-    assert "строка 1" in str(error.value)
+    assert "на строке 1" in str(error.value)
     assert "некорректный JSON" in str(error.value)
 
 
 def test_invalid_json_rep_line_n(tmp_path):
     input_f = tmp_path / "events.jsonl"
-    lines = ['{"timestamp":"2026-10-10T10:00:00","level":"INFO","source":"app","message":"ok"}\n'] * 6
+    lines = ['{"timestamp":"2026-10-10T10:00:00",'
+             '"level":"INFO","source":"app","message":"ok"}\n'] * 6
     lines.append("неверный json\n")
 
     input_f.write_text("".join(lines), encoding="utf-8")
@@ -87,4 +89,4 @@ def test_invalid_json_rep_line_n(tmp_path):
     with pytest.raises(InvalidEventError) as error:
         list(parse_jsonl(str(input_f)))
 
-    assert "строка 7" in str(error.value)
+    assert "на строке 7" in str(error.value)
