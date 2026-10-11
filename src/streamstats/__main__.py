@@ -1,36 +1,28 @@
 import argparse
-import logging
 import sys
 from streamstats.analysis import Statistics
 from streamstats.errors import StreamStatsError
 from streamstats.parsers import parse_csv, parse_jsonl
 from streamstats.report import make_report, save_report
+import logging
 
-
-def get_parser(format):
-    if format == 'csv':
-        return parse_csv
-
-    if format == 'json':
-        return parse_jsonl
-
-    raise ValueError('Неподдерживаемый формат')
-
+logging.basicConfig(level=logging.INFO)
 
 def make_arg_parser():
     parser = argparse.ArgumentParser(description="Анализ файлов")
-    subarsers = parser.add_subparsers(dest='command', required=True)
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
-    analize_parser = subarsers.add_parser('analize', help="Анализ файлов")
-    analize_parser.add_argument("inputs", nargs="+", help="Анализ input файлов")
-    analize_parser.add_argument("--format", choices=['csv', 'jsonl'], required=True, help="Формат input файлов")
-    analize_parser.add_argument("--output", required=True, help="Путь к файлу отчета")
-    analize_parser.add_argument("--skip-invalid", action='store_true')
+    analyze_parser = subparsers.add_parser('analyze', help="Анализ файлов")
+    analyze_parser.add_argument("inputs", nargs="+", help="Анализ input файлов")
+    analyze_parser.add_argument("--format", choices=['csv', 'jsonl'], required=True, help="Формат input файлов")
+    analyze_parser.add_argument("--output", required=True, help="Путь к файлу отчета")
+    analyze_parser.add_argument("--skip-invalid", action='store_true')
 
     return parser
 
 
-def run_analize(args):
+
+def run_analyze(args):
     statistics = Statistics()
 
     if args.format == 'csv':
@@ -40,9 +32,12 @@ def run_analize(args):
         parse_func = parse_jsonl
 
     for input_path in args.inputs:
-        events = parse_func(input_path)
+        events = parse_func(input_path, skip_invalid=args.skip_invalid)
 
         for event in events:
+            if event is None:
+                statistics.skip_invalid += 1
+                continue
             statistics.add_event(event)
 
     report = make_report(statistics)
@@ -54,8 +49,8 @@ def main():
     args = parser.parse_args()
 
     try:
-        if args.command == 'analize':
-            run_analize(args)
+        if args.command == 'analyze':
+            run_analyze(args)
     except StreamStatsError as e:
         print(e, file=sys.stderr)
         return 2
