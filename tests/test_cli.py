@@ -62,6 +62,21 @@ def test_without_skip(tmp_path):
     assert not output_f.exists()
 
 
+def test_csv_inval_without_skip(tmp_path):
+    input_f = tmp_path / "events.csv"
+    output_f = tmp_path / "report.json"
+    input_f.write_text("timestamp,level,source,message\n"
+                       "неверная дата,INFO,app,Ошибка\n", encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "csv", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 2
+    assert "на строке 2" in result.stderr
+    assert not output_f.exists()
+
+
 def test_2_input_f(tmp_path):
     frst = tmp_path / "first.jsonl"
     sec = tmp_path / "second.jsonl"
@@ -99,3 +114,103 @@ def test_miss_input_file(tmp_path):
     assert result.returncode == 2
     assert "missing.jsonl" in result.stderr
     assert not output_f.exists()
+
+
+def test_csv_skip_invalid(tmp_path):
+    input_f = tmp_path / "events.csv"
+    output_f = tmp_path / "report.json"
+
+    input_f.write_text("timestamp,level,source,message\n"
+                       "2026-10-10T10:00:00,INFO,app,первая\n"
+                       "неверная дата,ERROR,app,повреждённая\n"
+                       "2026-10-10T12:00:00,ERROR,server,третья\n",
+                       encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "csv", "--output",
+                             str(output_f), "--skip-invalid"], capture_output=True,
+                             text=True)
+
+    assert result.returncode == 0
+    report = json.loads(output_f.read_text(encoding="utf-8"))
+
+    assert report["total_events"] == 2
+    assert report["skipped_invalid"] == 1
+    assert report["by_level"] == {"INFO": 1, "ERROR": 1}
+    assert "WARNING" in result.stderr
+
+
+def test_cli_empty_f(tmp_path):
+    input_f = tmp_path / "empty.jsonl"
+    output_f = tmp_path / "report.json"
+    input_f.write_text("", encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 0
+    report = json.loads(output_f.read_text(encoding="utf-8"))
+    assert report["total_events"] == 0
+    assert report["first_timestamp"] is None
+    assert report["last_timestamp"] is None
+
+
+def test_cli_in_uni(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    output_f = tmp_path / "report.json"
+    input_f.write_text('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"сервер","message":"Ошибка подключения"}\n', encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 0
+    report_text = output_f.read_text(encoding="utf-8")
+    assert "сервер" in report_text
+    assert "\\u" not in report_text
+
+
+def test_cli_dont_modify_input_f(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    output_f = tmp_path / "report.json"
+    original_content = ('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"app","message":"Запуск"}\n')
+    input_f.write_text(original_content, encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 0
+    assert input_f.read_text(encoding="utf-8") == original_content
+
+
+def test_cli_rep_output_error(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    output_f = tmp_path / "missing-directory" / "report.json"
+    input_f.write_text('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"app","message":"Запуск"}\n', encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 2
+    assert "Ошибка работы с файлом" in result.stderr
+
+
+def test_cli_input_not_output(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    input_content = ('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"app","message":"Запуск"}\n')
+    input_f.write_text(input_content, encoding="utf-8")
+
+    result = subprocess.run([sys.executable,"-m", "streamstats", "analyze",
+            str(input_f), "--format", "jsonl", "--output",
+            str(input_f)], capture_output=True, text=True)
+
+    assert result.returncode == 2
+    assert "не должен совпадать" in result.stderr
+    assert input_f.read_text(encoding="utf-8") == input_content

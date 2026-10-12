@@ -1,8 +1,10 @@
 import json
 import pytest
 
+from streamstats.analysis import analyze_events
 from streamstats.errors import InvalidEventError, InvalidTimestmpError
 from streamstats.parsers import parse_csv, parse_jsonl
+from streamstats.report import make_report
 
 
 def test_csv(tmp_path):
@@ -90,3 +92,21 @@ def test_invalid_json_rep_line_n(tmp_path):
         list(parse_jsonl(str(input_f)))
 
     assert "на строке 7" in str(error.value)
+
+
+def test_csv_jsonl_odinakovaya_stata(tmp_path):
+    csv_file = tmp_path / "events.csv"
+    jsonl_file = tmp_path / "events.jsonl"
+
+    csv_file.write_text("timestamp,level,source,message\n"
+                          "2026-10-10T10:00:00,INFO,app,Запуск\n"
+                          "2026-10-10T11:00:00,ERROR,server,Ошибка\n", encoding="utf-8")
+    jsonl_file.write_text('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+                          '"source":"app","message":"Запуск"}\n'
+                          '{"timestamp":"2026-10-10T11:00:00","level":"ERROR",'
+                          '"source":"server","message":"Ошибка"}\n', encoding="utf-8")
+
+    csv_report = make_report(analyze_events(parse_csv(str(csv_file))))
+    jsonl_report = make_report(analyze_events(parse_jsonl(str(jsonl_file))))
+
+    assert csv_report == jsonl_report

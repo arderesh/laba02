@@ -1,12 +1,14 @@
 import csv
 import json
 from datetime import datetime
+from collections.abc import Iterator
+
 import logging
 from streamstats.errors import InvalidEventError, InvalidTimestmpError, StreamStatsError
 from streamstats.models import ALLOWED_LEVELS, Event
 
 
-def make_event(data, filename, line_number):
+def make_event(data: dict[str, object], filename: str, line_number: int) -> Event:
     required_fields = {"timestamp", "level", "source", "message"}
     missing_fields = required_fields - data.keys()
 
@@ -44,7 +46,7 @@ def make_event(data, filename, line_number):
                  message=message_val)
 
 
-def parse_csv(path, skip_invalid=False):
+def parse_csv(path: str, skip_invalid: bool = False) -> Iterator[Event | None]:
     with open(path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
 
@@ -62,7 +64,7 @@ def parse_csv(path, skip_invalid=False):
             yield event
 
 
-def parse_jsonl(path,skip_invalid=False):
+def parse_jsonl(path: str, skip_invalid: bool = False) -> Iterator[Event | None]:
     with open(path, "r", encoding="utf-8") as f:
         for line_number, line in enumerate(f, start=1):
             try:

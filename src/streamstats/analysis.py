@@ -13,7 +13,7 @@ class Statistics:
         self.last_timestmp = None
         self.skip_invalid = 0
 
-    def add_event(self, event: Event):
+    def add_event(self, event: Event) -> None:
         self.total_evs += 1
         self.level[event.level] += 1
         self.source[event.source] += 1
@@ -31,12 +31,12 @@ class Statistics:
         elif event.timestamp > self.last_timestmp:
             self.last_timestmp = event.timestamp
 
-    def top_errors(self, lim=5):
+    def top_errors(self, lim: int = 5) -> list[tuple[str, int]]:
         return sorted(self.err_sources.items(),
                       key=lambda item: (-item[1], item[0]))[:lim]
 
 
-def analyze_events(events):
+def analyze_events(events) -> Statistics:
     statistics = Statistics()
 
     for event in events:

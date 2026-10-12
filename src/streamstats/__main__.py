@@ -1,12 +1,13 @@
 import argparse
+import logging
+import os
 import sys
+
 from streamstats.analysis import Statistics
-from streamstats.errors import StreamStatsError
+from streamstats.errors import CLIConfError, StreamStatsError
 from streamstats.parsers import parse_csv, parse_jsonl
 from streamstats.report import make_report, save_report
-import logging
 
-logging.basicConfig(level=logging.INFO)
 
 def make_arg_parser():
     parser = argparse.ArgumentParser(description="Анализ файлов")
@@ -24,6 +25,14 @@ def make_arg_parser():
 
 
 def run_analyze(args):
+    output_p = os.path.abspath(args.output)
+    input_p = {os.path.abspath(input_path) for input_path in args.inputs}
+
+    if output_p in input_p:
+        raise CLIConfError(
+            "Выходной файл не должен совпадать с входным файлом"
+        )
+
     statistics = Statistics()
 
     if args.format == 'csv':
@@ -48,6 +57,7 @@ def run_analyze(args):
 def main():
     parser = make_arg_parser()
     args = parser.parse_args()
+    logging.basicConfig(level=logging.WARNING)
 
     try:
         if args.command == 'analyze':
