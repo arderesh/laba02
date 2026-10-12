@@ -3,7 +3,7 @@ import json
 from streamstats.analysis import Statistics
 
 
-def make_report(statistics: Statistics):
+def make_report(statistics: Statistics) -> dict:
     return {"total_events": statistics.total_evs,
             "by_level": dict(statistics.level),
             "by_source": dict(statistics.source),
@@ -16,6 +16,6 @@ def make_report(statistics: Statistics):
             "skipped_invalid": statistics.skip_invalid}
 
 
-def save_report(report, output_path):
+def save_report(report: dict, output_path: str) -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
