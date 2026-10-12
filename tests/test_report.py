@@ -21,7 +21,7 @@ def test_make_report():
     assert report["skipped_invalid"] == 0
 
 
-def test_save_in_unicode(tmp_path):
+def test_save_in_uni(tmp_path):
     output_f = tmp_path / "report.json"
 
     report = {"message": "Ошибка подкл",
