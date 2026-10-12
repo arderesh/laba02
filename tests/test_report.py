@@ -1,4 +1,3 @@
-import statistics
 from datetime import datetime
 
 from streamstats.analysis import Statistics
