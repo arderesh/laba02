@@ -199,3 +199,18 @@ def test_cli_rep_output_error(tmp_path):
 
     assert result.returncode == 2
     assert "Ошибка работы с файлом" in result.stderr
+
+
+def test_cli_input_not_output(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    input_content = ('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"app","message":"Запуск"}\n')
+    input_f.write_text(input_content, encoding="utf-8")
+
+    result = subprocess.run([sys.executable,"-m", "streamstats", "analyze",
+            str(input_f), "--format", "jsonl", "--output",
+            str(input_f)], capture_output=True, text=True)
+
+    assert result.returncode == 2
+    assert "не должен совпадать" in result.stderr
+    assert input_f.read_text(encoding="utf-8") == input_content
