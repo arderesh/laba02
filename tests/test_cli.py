@@ -99,3 +99,59 @@ def test_miss_input_file(tmp_path):
     assert result.returncode == 2
     assert "missing.jsonl" in result.stderr
     assert not output_f.exists()
+
+
+def test_csv_skip_invalid(tmp_path):
+    input_f = tmp_path / "events.csv"
+    output_f = tmp_path / "report.json"
+
+    input_f.write_text("timestamp,level,source,message\n"
+                       "2026-10-10T10:00:00,INFO,app,первая\n"
+                       "неверная дата,ERROR,app,повреждённая\n"
+                       "2026-10-10T12:00:00,ERROR,server,третья\n",
+                       encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "csv", "--output",
+                             str(output_f), "--skip-invalid"], capture_output=True,
+                             text=True)
+
+    assert result.returncode == 0
+    report = json.loads(output_f.read_text(encoding="utf-8"))
+
+    assert report["total_events"] == 2
+    assert report["skipped_invalid"] == 1
+    assert report["by_level"] == {"INFO": 1, "ERROR": 1}
+    assert "WARNING" in result.stderr
+
+
+def test_cli_empty_f(tmp_path):
+    input_f = tmp_path / "empty.jsonl"
+    output_f = tmp_path / "report.json"
+    input_f.write_text("", encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 0
+    report = json.loads(output_f.read_text(encoding="utf-8"))
+    assert report["total_events"] == 0
+    assert report["first_timestamp"] is None
+    assert report["last_timestamp"] is None
+
+
+def test_cli_in_uni(tmp_path):
+    input_f = tmp_path / "events.jsonl"
+    output_f = tmp_path / "report.json"
+    input_f.write_text('{"timestamp":"2026-10-10T10:00:00","level":"INFO",'
+        '"source":"сервер","message":"Ошибка подключения"}\n', encoding="utf-8")
+
+    result = subprocess.run([sys.executable, "-m", "streamstats", "analyze",
+                             str(input_f), "--format", "jsonl", "--output",
+                             str(output_f)], capture_output=True, text=True)
+
+    assert result.returncode == 0
+    report_text = output_f.read_text(encoding="utf-8")
+    assert "сервер" in report_text
+    assert "\\u" not in report_text
